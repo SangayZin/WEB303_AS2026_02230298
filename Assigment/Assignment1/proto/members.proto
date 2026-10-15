@@ -1,0 +1,60 @@
+syntax = "proto3";
+
+package members.v1;
+
+option go_package = "github.com/sangay/web303/proto/members/v1;membersv1";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+
+// ---------- Messages ----------
+message Member {
+  string id = 1;
+  string name = 2;
+  string email = 3;
+  string phone = 4;
+  string plan = 5;                          // basic | premium | vip
+  google.protobuf.Timestamp joined_at = 6;
+}
+
+message CreateMemberRequest {
+  string name = 1;
+  string email = 2;
+  string phone = 3;
+  string plan = 4;
+}
+
+message GetMemberRequest {
+  string id = 1;
+}
+
+message UpdateMemberRequest {
+  string id = 1;
+  string name = 2;
+  string email = 3;
+  string phone = 4;
+  string plan = 5;
+}
+
+message DeleteMemberRequest {
+  string id = 1;
+}
+
+message ListMembersRequest {
+  int32 page_size = 1;
+  string page_token = 2;
+}
+
+message ListMembersResponse {
+  repeated Member members = 1;
+  string next_page_token = 2;
+}
+
+// ---------- Service ----------
+service MemberService {
+  rpc CreateMember(CreateMemberRequest) returns (Member);
+  rpc GetMember(GetMemberRequest)       returns (Member);
+  rpc UpdateMember(UpdateMemberRequest) returns (Member);
+  rpc DeleteMember(DeleteMemberRequest) returns (google.protobuf.Empty);
+  rpc ListMembers(ListMembersRequest)   returns (ListMembersResponse);
+}

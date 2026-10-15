@@ -1,0 +1,17 @@
+**/.git
+**/.gitignore
+**/.idea
+**/.vscode
+**/node_modules
+**/*.log
+**/tmp
+**/bin
+**/dist
+**/coverage
+**/web303-screenshots
+**/postman
+**/.env
+**/.env.*
+!**/.env.example
+**/go.work
+**/go.work.sum

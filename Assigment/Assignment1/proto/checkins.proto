@@ -1,0 +1,54 @@
+syntax = "proto3";
+
+package checkins.v1;
+
+option go_package = "github.com/sangay/web303/proto/checkins/v1;checkinsv1";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+
+// ---------- Messages ----------
+message CheckIn {
+  string id = 1;
+  string member_id = 2;
+  google.protobuf.Timestamp check_in_at = 3;
+  string notes = 4;
+}
+
+message CreateCheckInRequest {
+  string member_id = 1;
+  string notes = 2;
+}
+
+message GetCheckInRequest {
+  string id = 1;
+}
+
+message UpdateCheckInRequest {
+  string id = 1;
+  string notes = 2;
+}
+
+message DeleteCheckInRequest {
+  string id = 1;
+}
+
+message ListCheckInsRequest {
+  string member_id = 1;   // optional filter
+  int32 page_size = 2;
+  string page_token = 3;
+}
+
+message ListCheckInsResponse {
+  repeated CheckIn checkins = 1;
+  string next_page_token = 2;
+}
+
+// ---------- Service ----------
+service CheckInService {
+  rpc CreateCheckIn(CreateCheckInRequest) returns (CheckIn);
+  rpc GetCheckIn(GetCheckInRequest)       returns (CheckIn);
+  rpc UpdateCheckIn(UpdateCheckInRequest) returns (CheckIn);
+  rpc DeleteCheckIn(DeleteCheckInRequest) returns (google.protobuf.Empty);
+  rpc ListCheckIns(ListCheckInsRequest)   returns (ListCheckInsResponse);
+}

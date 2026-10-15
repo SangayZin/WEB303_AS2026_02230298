@@ -1,0 +1,114 @@
+services:
+  # ---------- Database B (Members) ----------
+  members-db:
+    image: postgres:16-alpine
+    container_name: members-db
+    environment:
+      POSTGRES_USER:     ${POSTGRES_USER_B}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD_B}
+      POSTGRES_DB:       ${POSTGRES_DB_B}
+    volumes:
+      - members-db-data:/var/lib/postgresql/data
+      - ./service-b-members/sql/schema.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER_B} -d ${POSTGRES_DB_B}"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+    networks: [gym-net]
+
+  # ---------- Database A (CheckIns) ----------
+  checkins-db:
+    image: postgres:16-alpine
+    container_name: checkins-db
+    environment:
+      POSTGRES_USER:     ${POSTGRES_USER_A}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD_A}
+      POSTGRES_DB:       ${POSTGRES_DB_A}
+    volumes:
+      - checkins-db-data:/var/lib/postgresql/data
+      - ./service-a-checkins/sql/schema.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER_A} -d ${POSTGRES_DB_A}"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+    networks: [gym-net]
+
+  # ---------- Service B (Members) ----------
+  service-b-members:
+    build:
+      context: .
+      dockerfile: service-b-members/Dockerfile
+    image: web303/service-b-members:latest
+    container_name: service-b-members
+    environment:
+      GRPC_PORT:   ${B_GRPC_PORT}
+      DB_HOST:     members-db
+      DB_PORT:     5432
+      DB_USER:     ${POSTGRES_USER_B}
+      DB_PASSWORD: ${POSTGRES_PASSWORD_B}
+      DB_NAME:     ${POSTGRES_DB_B}
+      DB_SSLMODE:  disable
+    depends_on:
+      members-db:
+        condition: service_healthy
+    networks: [gym-net]
+
+  # ---------- Service A (CheckIns) ----------
+  service-a-checkins:
+    build:
+      context: .
+      dockerfile: service-a-checkins/Dockerfile
+    image: web303/service-a-checkins:latest
+    container_name: service-a-checkins
+    environment:
+      GRPC_PORT:             ${A_GRPC_PORT}
+      DB_HOST:               checkins-db
+      DB_PORT:               5432
+      DB_USER:               ${POSTGRES_USER_A}
+      DB_PASSWORD:           ${POSTGRES_PASSWORD_A}
+      DB_NAME:               ${POSTGRES_DB_A}
+      DB_SSLMODE:            disable
+      MEMBERS_ADDR:          ${A_MEMBERS_ADDR}
+      MEMBERS_TIMEOUT:       ${A_MEMBERS_TIMEOUT}
+      MEMBERS_MAX_ATTEMPTS:  ${A_MEMBERS_MAX_ATTEMPTS}
+      MEMBERS_BASE_BACKOFF:  ${A_MEMBERS_BASE_BACKOFF}
+      MEMBERS_MAX_BACKOFF:   ${A_MEMBERS_MAX_BACKOFF}
+      CB_MAX_REQUESTS:       ${A_CB_MAX_REQUESTS}
+      CB_INTERVAL:           ${A_CB_INTERVAL}
+      CB_TIMEOUT:            ${A_CB_TIMEOUT}
+      CB_MIN_REQUESTS:       ${A_CB_MIN_REQUESTS}
+      CB_FAILURE_RATE:       ${A_CB_FAILURE_RATE}
+    depends_on:
+      checkins-db:
+        condition: service_healthy
+      service-b-members:
+        condition: service_started
+    networks: [gym-net]
+
+  # ---------- API Gateway ----------
+  api-gateway:
+    build:
+      context: .
+      dockerfile: api-gateway/Dockerfile
+    image: web303/api-gateway:latest
+    container_name: api-gateway
+    ports:
+      - "${GW_HTTP_PORT}:${GW_HTTP_PORT}"
+    environment:
+      HTTP_PORT:     ${GW_HTTP_PORT}
+      MEMBERS_ADDR:  ${GW_MEMBERS_ADDR}
+      CHECKINS_ADDR: ${GW_CHECKINS_ADDR}
+    depends_on:
+      service-b-members:  { condition: service_started }
+      service-a-checkins: { condition: service_started }
+    networks: [gym-net]
+
+networks:
+  gym-net:
+    driver: bridge
+
+volumes:
+  members-db-data:
+  checkins-db-data:

@@ -1,0 +1,8 @@
+go 1.25.0
+
+use (
+	./api-gateway
+	./proto
+	./service-a-checkins
+	./service-b-members
+)

@@ -64,8 +64,8 @@ Each service has its **own PostgreSQL database**. Service A cannot read Service 
 
 ```bash
 # 1. Clone
-git clone https://github.com/SangayZin/web303-assignment.git
-cd web303-assignment
+git clone https://github.com/SangayZin/WEB303_AS2026_02230298/tree/main/Assigment/Assignment1
+cd web303-assignment1
 
 # 2. Configure environment
 cp .env.example .env
